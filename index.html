@@ -1,0 +1,2510 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>PECAH Guru &amp; Pegawai</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js">
+    </script>
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: #505350;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .main-container {
+            background: #ece7ef;
+            padding: 25px 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            max-width: 950px;
+            width: 100%;
+        }
+        .main-container h1 {
+            color: #1a3a5c;
+            text-align: center;
+            margin-bottom: 2px;
+            font-size: 24px;
+        }
+        .sub {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+        /* Toast */
+        #toastContainer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 350px;
+            width: 100%;
+        }
+        .toast {
+            background: #1a3a5c;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            font-size: 14px;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid #28a745;
+        }
+        .toast.error {
+            border-left-color: #dc3545;
+        }
+        .toast.warning {
+            border-left-color: #ffc107;
+        }
+        .toast.info {
+            border-left-color: #17a2b8;
+        }
+        .toast .toast-icon {
+            font-size: 20px;
+        }
+        .toast .toast-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        .toast .toast-close:hover {
+            opacity: 1;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        /* Admin Status */
+        .admin-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            background: #f8fafc;
+            padding: 8px 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .admin-status .left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        #clockDisplay {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2c3e50;
+            background: #e9ecef;
+            padding: 4px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .status-text {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .status-text.locked {
+            color: #e74c3c;
+        }
+        .status-text.unlocked {
+            color: #27ae60;
+        }
+        /* Buttons */
+        .btn-admin {
+            padding: 6px 18px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        .btn-admin.login {
+            background: #6f42c1;
+            color: white;
+        }
+        .btn-admin.login:hover {
+            background: #5a32a3;
+        }
+        .btn-admin.logout {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-admin.logout:hover {
+            background: #c82333;
+        }
+        .btn-admin.tool {
+            background: #e9ecef;
+            color: #1a3a5c;
+            border: 1px solid #ced4da;
+        }
+        .btn-admin.tool:hover {
+            background: #dde1e6;
+        }
+        .btn-admin.absen-btn {
+            background: #28a745;
+            color: white;
+            border: 1px solid #28a745;
+        }
+        .btn-admin.absen-btn:hover {
+            background: #218838;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            flex: 1;
+            min-width: 110px;
+            text-align: center;
+        }
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .btn-sm {
+            padding: 3px 8px;
+            font-size: 11px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-masuk-sm {
+            background: #28a745;
+            color: white;
+        }
+        .btn-pulang-sm {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-edit-sm {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-hapus-sm {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-masuk {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .btn-masuk:hover {
+            background: #218838;
+        }
+        .btn-loading {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+        .btn-loading::after {
+            content: " ⏳";
+        }
+        /* Role Badge */
+        .role-badge {
+            background: #6c757d;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+        .role-badge.superadmin {
+            background: #28a745;
+        }
+        .role-badge.admin {
+            background: #007bff;
+        }
+        .admin-status .status-text,
+        .admin-status .role-badge.admin {
+            display: none;
+        }
+        .admin-status.superadmin .status-text,
+        .admin-status.superadmin .role-badge.superadmin {
+            display: inline-block;
+        }
+        /* Footer Login */
+        .footer-login {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .footer-login .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .footer-login .footer-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .footer-login .status-text {
+            font-size: 13px;
+        }
+        .footer-login .btn-admin.login {
+            background: #6f42c1;
+            color: white;
+            padding: 6px 20px;
+        }
+        .footer-login .btn-admin.login:hover {
+            background: #5a32a3;
+        }
+        .footer-login .btn-admin.logout {
+            background: #dc3545;
+            color: white;
+            padding: 6px 20px;
+        }
+        .footer-login .btn-admin.logout:hover {
+            background: #c82333;
+        }
+        .footer-login .role-badge {
+            font-size: 11px;
+        }
+        .footer-login .user-display {
+            font-size: 12px;
+            color: #555;
+        }
+        /* Stats Mini - Default Grid */
+        .stats-mini {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 0;
+            margin-bottom: 16px;
+            background: transparent;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .stats-mini .card-stat {
+            background: white;
+            border-radius: 14px;
+            padding: 14px 8px 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            border: 1px solid #eef2f6;
+            transition: 0.2s;
+            cursor: default;
+        }
+        .stats-mini .card-stat .icon {
+            font-size: 26px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .stats-mini .card-stat .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a3a5c;
+            line-height: 1.2;
+        }
+        .stats-mini .card-stat .label {
+            font-size: 12px;
+            color: #777;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+        .stats-mini .card-stat.total {
+            background: #f8fafc;
+        }
+        .stats-mini .card-stat.hadir {
+            background: #eafaf1;
+        }
+        .stats-mini .card-stat.izin {
+            background: #fef9e7;
+        }
+        .stats-mini .card-stat.sakit {
+            background: #fdedec;
+        }
+        .stats-mini .card-stat.tugas {
+            background: #eaf2f8;
+        }
+        .stats-mini .card-stat.belum {
+            background: #f4f6f7;
+        }
+        .stats-mini .card-stat.terlambat {
+            background: #fce4ec;
+        }
+        .stats-mini .card-stat.jmlterlambat {
+            background: #f9ebea;
+        }
+        /* Stats Mini - Horizontal (Minimalis) */
+        .stats-mini.mode-horizontal {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+            justify-content: center;
+            background: #f8fafc;
+            padding: 8px 16px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .stats-mini.mode-horizontal .card-stat {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: #2c3e50;
+            transform: none !important;
+        }
+        .stats-mini.mode-horizontal .card-stat .icon {
+            font-size: 16px;
+            display: inline;
+            margin: 0;
+        }
+        .stats-mini.mode-horizontal .card-stat .value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a3a5c;
+            min-width: 20px;
+            text-align: center;
+            display: inline;
+        }
+        .stats-mini.mode-horizontal .card-stat .label {
+            font-size: 12px;
+            color: #555;
+            margin: 0;
+            display: inline;
+            font-weight: 500;
+        }
+        /* Hidden Features */
+        .hidden-features {
+            display: none;
+        }
+        .hidden-features.show {
+            display: block;
+        }
+        .hidden-feature {
+            display: none !important;
+        }
+        /* Employee List */
+        .employee-list-login {
+            margin-top: 12px;
+            max-height: 380px;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .emp-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            flex-wrap: wrap;
+        }
+        .emp-item .info {
+            flex: 1;
+        }
+        .emp-item .nama {
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .emp-item .jabatan {
+            font-size: 12px;
+            color: #555;
+        }
+        .emp-item .waktu {
+            font-size: 11px;
+            color: #2c3e50;
+        }
+        .emp-item .alasan-text {
+            font-size: 11px;
+            color: #555;
+            font-style: italic;
+            margin-top: 2px;
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        /* Badge Status */
+        .badge-status {
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+        .badge-Hadir {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-Izin {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .badge-Sakit {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .badge-Tugas {
+            background: #cce5ff;
+            color: #004085;
+        }
+        .badge-Belum {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+        /* Search */
+        .search-area {
+            margin: 10px 0 8px 0;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-area input {
+            flex: 1;
+            padding: 8px 14px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 180px;
+            transition: 0.2s;
+        }
+        .search-area input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        .search-area .search-icon {
+            font-size: 18px;
+            color: #555;
+        }
+        .search-area .search-clear {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            display: none;
+        }
+        .search-area .search-clear.show {
+            display: inline-block;
+        }
+        .search-area .search-count {
+            font-size: 13px;
+            color: #555;
+            font-weight: 500;
+        }
+        /* Toolbar */
+        .toolbar-login {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 12px 0;
+        }
+        /* Entry Area */
+        .entry-area {
+            display: block;
+            margin: 12px 0;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px dashed #cbd5e1;
+        }
+        .form-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .form-row input,
+        .form-row select {
+            padding: 8px 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 130px;
+            flex: 1;
+        }
+        .form-row .alasan-input {
+            display: none;
+            flex: 1 1 100%;
+        }
+        .form-row .alasan-input.show {
+            display: block;
+        }
+        .form-row .alasan-input input {
+            width: 100%;
+        }
+        /* Rekap & History */
+        .rekap-container,
+        .history-section {
+            margin-top: 16px;
+            border-top: 2px solid #eee;
+            padding-top: 12px;
+        }
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .filter-row label {
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .filter-row input,
+        .filter-row select {
+            padding: 5px 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .rekap-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .rekap-table th {
+            background: #1a3a5c;
+            color: white;
+            padding: 6px 5px;
+            text-align: left;
+        }
+        .rekap-table td {
+            padding: 6px 5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .total-row {
+            font-weight: 700;
+            background: #e9ecef;
+        }
+        .pagination-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            justify-content: center;
+        }
+        .pagination-controls button {
+            padding: 4px 12px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        .pagination-controls button:hover:not(:disabled) {
+            background: #e9ecef;
+        }
+        .pagination-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination-controls .page-info {
+            background: #e9ecef;
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 22px;
+            border-radius: 18px;
+            max-width: 650px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 {
+            margin-bottom: 12px;
+            color: #1a3a5c;
+            font-size: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+        .form-actions .btn {
+            padding: 8px 22px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .error-msg {
+            color: #e74c3c;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 8px;
+            display: none;
+        }
+        .setup-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            color: #856404;
+            font-size: 14px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ccc;
+            border-top-color: #3498db;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats-mini:not(.mode-horizontal) {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+        }
+        @media (max-width: 600px) {
+            .admin-status {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .admin-status .left,
+            .admin-status .right {
+                justify-content: center;
+            }
+            .stats-mini.mode-horizontal {
+                gap: 6px 14px;
+                padding: 8px 12px;
+            }
+            .footer-login {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .footer-login .footer-left,
+            .footer-login .footer-right {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <div class="main-container">
+        <h1>📋 PECAH Guru &amp; Pegawai</h1>
+        <div class="sub">Pencatatan Kehadiran Guru - Pegawai</div>
+
+        <!-- Admin Status -->
+        <div class="admin-status" id="adminStatus">
+            <div class="left">
+                <span id="clockDisplay">⏰ --:--:-- WITA</span>
+                <button id="btnPengaturan" class="btn-admin tool hidden-feature">⚙️ Pengaturan</button>
+                <button id="btnAbsen" class="btn-admin tool absen-btn hidden-feature">✅ Absen Semua</button>
+                <span class="status-text locked" id="statusText">🔒 Login</span>
+                <span id="roleBadge" class="role-badge" style="display:none;"></span>
+                <span id="userDisplay" style="font-size:12px;color:#555;margin-left:4px;"></span>
+            </div>
+            <div class="right"></div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-mini" id="statsMini">
+            <div class="card-stat total"><span class="icon">👥</span><div class="value" id="total">0</div><div class="label">Data</div></div>
+            <div class="card-stat hadir"><span class="icon">✅</span><div class="value" id="totalHadir">0</div><div class="label">Hadir</div></div>
+            <div class="card-stat izin"><span class="icon">📝</span><div class="value" id="totalIzin">0</div><div class="label">Izin</div></div>
+            <div class="card-stat sakit"><span class="icon">🤒</span><div class="value" id="totalSakit">0</div><div class="label">Sakit</div></div>
+            <div class="card-stat tugas"><span class="icon">📌</span><div class="value" id="totalTugas">0</div><div class="label">Tugas</div></div>
+            <div class="card-stat belum"><span class="icon">⏳</span><div class="value" id="totalBelum">0</div><div class="label">Belum</div></div>
+            <div class="card-stat terlambat"><span class="icon">⏰</span><div class="value" id="totalTerlambat">0</div><div class="label">Waktu</div></div>
+            <div class="card-stat jmlterlambat"><span class="icon">⚠️</span><div class="value" id="totalJmlTerlambat">0</div><div class="label">Terlambat</div></div>
+        </div>
+
+        <!-- Hidden Features -->
+        <div class="hidden-features" id="hiddenFeatures">
+            <div class="toolbar-login">
+                <button class="btn btn-warning hidden-feature" id="btnResetHari">🔄 Reset Hari</button>
+                <button class="btn btn-danger hidden-feature" id="btnHapusData">🗑️ Hapus Data</button>
+                <button class="btn btn-warning hidden-feature" id="btnPulangkanSemua">🏠 Pulangkan Semua</button>
+            </div>
+
+            <div class="search-area">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Cari pegawai...">
+                <button class="search-clear" id="searchClear">✖</button>
+                <span class="search-count" id="searchCount"></span>
+            </div>
+
+            <div class="employee-list-login" id="employeeListLogin"></div>
+
+            <!-- Rekap -->
+            <div class="rekap-container" id="rekapContainer">
+                <details>
+                    <summary style="font-weight:700; cursor:pointer; color:#1a3a5c;">📊 Lihat Rekap &amp; Filter</summary>
+                    <div style="margin-top:10px;">
+                        <div class="filter-row">
+                            <label>📅 Dari:</label><input type="date" id="filterStart">
+                            <label>Sampai:</label><input type="date" id="filterEnd">
+                            <label>Nama:</label><input type="text" id="filterNama" placeholder="Cari...">
+                            <label>Status:</label>
+                            <select id="filterStatus">
+                                <option value="">Semua</option>
+                                <option>Hadir</option><option>Izin</option><option>Sakit</option>
+                                <option>Tugas</option><option>Terlambat</option><option>Belum</option>
+                            </select>
+                            <button id="btnTampilkanRekap" class="btn btn-primary" style="padding:5px 14px;">🔍 Tampilkan</button>
+                            <button id="btnExportRekap" class="btn btn-success" style="padding:5px 14px;">📊 Export Excel</button>
+                            <button id="btnResetFilter" class="btn btn-warning" style="padding:5px 14px;">↩️ Reset</button>
+                        </div>
+                        <div id="rekapResult" style="overflow-x:auto; max-height:380px;"></div>
+                        <div id="rekapPagination" class="pagination-controls" style="display:none;"></div>
+                    </div>
+                </details>
+            </div>
+
+            <!-- History -->
+            <div class="history-section" id="historySection">
+                <details>
+                    <summary style="font-weight:700; cursor:pointer; color:#1a3a5c;">📅 Riwayat Tanggal Lain</summary>
+                    <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                        <input type="date" id="filterDate" style="padding:5px;">
+                        <button id="btnLoadHistory" class="btn btn-primary" style="padding:5px 14px;">Tampilkan</button>
+                        <button id="btnResetHistory" class="btn btn-warning" style="padding:5px 14px;">Hari Ini</button>
+                        <label style="font-size:13px; display:flex; align-items:center; gap:4px;">
+                            <input type="checkbox" id="filterTerlambatHistory"> Hanya Terlambat
+                        </label>
+                        <label style="font-size:13px; display:flex; align-items:center; gap:4px;">
+                            <input type="checkbox" id="filterBelumHistory"> Tampilkan Belum
+                        </label>
+                    </div>
+                    <div style="overflow-x:auto; max-height:380px; margin-top:8px;">
+                        <table style="width:100%; border-collapse:collapse; font-size:13px;" id="historyTable">
+                            <thead><tr style="background:#1a3a5c;color:white;"><th>Nama</th><th>Datang</th><th>Pulang</th><th>Status</th><th>Alasan</th><th>Terlambat</th><th>Aksi</th></tr></thead>
+                            <tbody id="historyBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="historyPagination" class="pagination-controls" style="display:none;"></div>
+                </details>
+            </div>
+
+            <!-- Absen Cepat (Superadmin only) -->
+            <div class="entry-area hidden-feature" id="absenCepatArea">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-weight:600; font-size:14px; color:#1a3a5c;">⚡ Absen Cepat</span>
+                    <span style="font-size:11px; color:#6c757d; background:#e9ecef; padding:2px 10px; border-radius:12px;" id="absenCepatRoleLabel">🔒 Superadmin</span>
+                </div>
+                <div class="form-row">
+                    <input type="text" id="inputNamaCepat" placeholder="Nama Lengkap">
+                    <input type="text" id="inputJabatanCepat" placeholder="Jabatan (opsional)">
+                    <select id="statusCepat">
+                        <option value="Hadir">✅ Hadir</option>
+                        <option value="Izin">📝 Izin</option>
+                        <option value="Sakit">🤒 Sakit</option>
+                        <option value="Tugas">📌 Tugas</option>
+                    </select>
+                    <div class="alasan-input" id="alasanCepatContainer">
+                        <input type="text" id="alasanCepat" placeholder="Alasan (Izin/Tugas)">
+                    </div>
+                    <button class="btn-masuk" id="btnAbsenCepat">✅ Absen Masuk</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Login -->
+        <div class="footer-login" id="footerLogin">
+            <div class="footer-left">
+                <span class="status-text locked" id="footerStatusText">🔒 Belum Login</span>
+                <span id="footerRoleBadge" class="role-badge" style="display:none;"></span>
+                <span id="footerUserDisplay" class="user-display"></span>
+            </div>
+            <div class="footer-right">
+                <button id="footerLoginBtn" class="btn-admin login">🔑 Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Login -->
+    <div class="modal" id="adminLoginModal">
+        <div class="modal-content">
+            <h2 id="loginModalTitle">🔐 Login</h2>
+            <div id="setupWarning" class="setup-warning" style="display:none;">
+                ⚠️ Belum ada user. Silakan <strong>buat user Superadmin pertama</strong> di bawah.
+            </div>
+            <div class="form-group"><label>Username</label><input type="text" id="adminUsername" placeholder="Username"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="adminPassword" placeholder="Password"></div>
+            <div id="setupConfirmGroup" class="form-group" style="display:none;">
+                <label>Konfirmasi Password</label>
+                <input type="password" id="adminPasswordConfirm" placeholder="Ulangi password">
+            </div>
+            <div class="error-msg" id="adminLoginError">Username atau password salah!</div>
+            <div id="loginRateMsg" style="color:#dc3545; font-size:13px; text-align:center; display:none;"></div>
+            <div class="form-actions">
+                <button id="btnLoginSubmit" class="btn btn-primary">Login / Setup</button>
+                <button id="btnLoginBatal" class="btn btn-secondary">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pengaturan (Superadmin only) -->
+    <div class="modal" id="modalPengaturan">
+        <div class="modal-content" style="max-width: 700px;">
+            <h2>⚙️ Pengaturan Superadmin</h2>
+            
+            <!-- Pengaturan Jam -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <h3 style="color: #1a3a5c; font-size: 16px; margin-bottom: 10px;">🕐 Pengaturan Jam</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 4px;">Jam Masuk</label>
+                        <input type="time" id="settingJamMasuk" value="07:15" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 4px;">Jam Pulang</label>
+                        <input type="time" id="settingJamPulang" value="16:00" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <label style="font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="settingAutoPulang"> Auto Pulang Otomatis
+                    </label>
+                    <small style="color: #666; font-size: 12px;">Jika diaktifkan, pegawai akan otomatis dipulangkan pada jam pulang</small>
+                </div>
+            </div>
+
+            <!-- Manajemen User -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <h3 style="color: #1a3a5c; font-size: 16px; margin-bottom: 10px;">👤 Manajemen User</h3>
+                <div id="userList" style="max-height: 150px; overflow-y: auto; margin-bottom: 10px;"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                    <input type="text" id="newUsername" placeholder="Username baru" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <input type="password" id="newPassword" placeholder="Password" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <select id="newUserRole" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <option value="admin">Admin</option>
+                        <option value="superadmin">Superadmin</option>
+                    </select>
+                </div>
+                <button id="btnTambahUser" class="btn btn-success" style="margin-top: 8px; width: 100%;">➕ Tambah User</button>
+            </div>
+
+            <!-- Manajemen Pegawai (Superadmin only) -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <h3 style="color: #1a3a5c; font-size: 16px; margin-bottom: 10px;">👥 Manajemen Pegawai</h3>
+                <div id="pegawaiList" style="max-height: 150px; overflow-y: auto; margin-bottom: 10px;"></div>
+                <button id="btnRefreshPegawai" class="btn btn-primary" style="margin-top: 8px; width: 100%;">🔄 Muat Ulang Daftar</button>
+            </div>
+
+            <!-- Manajemen Data (Superadmin only) -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <h3 style="color: #1a3a5c; font-size: 16px; margin-bottom: 10px;">💾 Manajemen Data</h3>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button id="btnBackupData" class="btn btn-primary" style="flex: 1;">💾 Backup Data</button>
+                    <button id="btnRestoreData" class="btn btn-warning" style="flex: 1;">📂 Restore Data</button>
+                    <button id="btnResetDefaultUsers" class="btn btn-danger" style="flex: 1;">🔄 Reset User Default</button>
+                </div>
+                <div style="margin-top: 8px;">
+                    <input type="file" id="fileRestore" accept=".json" style="display: none;">
+                </div>
+            </div>
+
+            <!-- Informasi -->
+            <div style="background: #eaf2f8; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; flex-wrap: wrap; gap: 5px;">
+                    <span>📊 Total Pegawai: <strong id="settingTotalPegawai">0</strong></span>
+                    <span>📋 Total Absensi: <strong id="settingTotalAbsensi">0</strong></span>
+                    <span>👤 Total User: <strong id="settingTotalUser">0</strong></span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button id="btnSimpanPengaturan" class="btn btn-success" style="flex: 1;">💾 Simpan Pengaturan</button>
+                <button id="btnTutupPengaturan" class="btn btn-secondary" style="flex: 1;">❌ Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Status -->
+    <div class="modal" id="modalEditStatus">
+        <div class="modal-content">
+            <h2>Ubah Status Kehadiran</h2>
+            <p id="editNamaDisplay" style="text-align:center; font-weight:700;"></p>
+            <select id="editStatusSelect" style="width:100%; padding:8px;">
+                <option>Hadir</option><option>Izin</option><option>Sakit</option><option>Tugas</option>
+            </select>
+            <div class="form-group" id="editAlasanGroup" style="display:none;">
+                <label>Alasan</label>
+                <input type="text" id="editAlasanInput" placeholder="Masukkan alasan">
+            </div>
+            <div class="form-actions" style="margin-top:12px;">
+                <button id="btnSimpanStatus" class="btn btn-success">Simpan</button>
+                <button id="btnBatalStatus" class="btn btn-secondary">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        //  APPLICATION LOGIC - UPDATED:
+        //  - Absen Semua (btnAbsen) → tampil untuk semua yang login (Admin & Superadmin)
+        //  - Absen Cepat (absenCepatArea) → hanya Superadmin
+        // ================================================================
+        (function() {
+            'use strict';
+
+            // ---------- UTILITY ----------
+            function sanitize(str) {
+                if (!str) return '';
+                return str.replace(/<[^>]*>/g, '').trim();
+            }
+
+            function generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+            }
+
+            function getToday() {
+                const now = new Date();
+                const formatter = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'Asia/Makassar',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                });
+                return formatter.format(now);
+            }
+
+            function getTimeNow() {
+                const now = new Date();
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'Asia/Makassar',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+                return formatter.format(now);
+            }
+
+            function parseJSON(data, fallback) {
+                if (data == null) return fallback;
+                try { return JSON.parse(data); } catch (e) { return fallback; }
+            }
+
+            // ---------- HASH PASSWORD ----------
+            function hashPassword(pw) {
+                if (typeof sha256 !== 'undefined') {
+                    return sha256(pw);
+                } else {
+                    console.warn('sha256 tidak tersedia, gunakan btoa');
+                    return btoa(pw);
+                }
+            }
+
+            // ---------- STORAGE ----------
+            const STORAGE = {
+                MASTER: 'absensi_master_pegawai',
+                ATTEND: 'absensi_data_kehadiran',
+                USERS: 'app_users',
+                JAM_MASUK: 'absensi_jam_masuk',
+                JAM_PULANG: 'absensi_jam_pulang',
+                AUTO_PULANG: 'absensi_auto_pulang',
+                SESSION: 'admin_session',
+                FEATURES: 'app_feature_settings',
+                INIT_DONE: 'pecah_init_done'
+            };
+
+            function getMaster() {
+                const data = localStorage.getItem(STORAGE.MASTER);
+                return parseJSON(data, []);
+            }
+
+            function saveMaster(d) { localStorage.setItem(STORAGE.MASTER, JSON.stringify(d)); }
+
+            function getAttend() {
+                const data = localStorage.getItem(STORAGE.ATTEND);
+                return parseJSON(data, []);
+            }
+
+            function saveAttend(d) { localStorage.setItem(STORAGE.ATTEND, JSON.stringify(d)); }
+
+            function getUsers() {
+                const data = localStorage.getItem(STORAGE.USERS);
+                return parseJSON(data, []);
+            }
+
+            function saveUsers(u) { localStorage.setItem(STORAGE.USERS, JSON.stringify(u)); }
+
+            function getJamMasuk() { return localStorage.getItem(STORAGE.JAM_MASUK) || '07:15'; }
+
+            function setJamMasuk(v) { localStorage.setItem(STORAGE.JAM_MASUK, v); }
+
+            function getJamPulang() { return localStorage.getItem(STORAGE.JAM_PULANG) || '16:00'; }
+
+            function setJamPulang(v) { localStorage.setItem(STORAGE.JAM_PULANG, v); }
+
+            function getAutoPulang() { return localStorage.getItem(STORAGE.AUTO_PULANG) === 'true'; }
+
+            function setAutoPulang(v) { localStorage.setItem(STORAGE.AUTO_PULANG, String(v)); }
+
+            function hitungTerlambat(jamDatang) {
+                const [hM, mM] = getJamMasuk().split(':').map(Number);
+                const [hD, mD] = jamDatang.split(':').map(Number);
+                const selisih = (hD * 60 + mD) - (hM * 60 + mM);
+                return selisih > 0 ? selisih : 0;
+            }
+
+            // ---------- USER AUTH ----------
+            function findUser(username) {
+                return getUsers().find(u => u.username.toLowerCase() === username.toLowerCase());
+            }
+
+            function authenticate(username, password) {
+                const user = findUser(username);
+                if (!user) return null;
+                const hashInput = hashPassword(password);
+                if (user.passwordHash === hashInput) {
+                    return { id: user.id, username: user.username, role: user.role };
+                }
+                return null;
+            }
+
+            function createUser(username, password, role) {
+                const users = getUsers();
+                if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                    return { success: false, message: 'Username sudah digunakan.' };
+                }
+                if (username.length < 2) return { success: false, message: 'Username minimal 2 karakter.' };
+                if (password.length < 4) return { success: false, message: 'Password minimal 4 karakter.' };
+                const newUser = {
+                    id: generateId(),
+                    username: sanitize(username),
+                    passwordHash: hashPassword(password),
+                    role: role || 'admin'
+                };
+                users.push(newUser);
+                saveUsers(users);
+                return { success: true };
+            }
+
+            // ---------- RESET USER DEFAULT - ONLY CALLED ONCE ----------
+            let defaultUsersInitialized = false;
+
+            function initDefaultUsers() {
+                if (defaultUsersInitialized) return;
+                if (localStorage.getItem(STORAGE.INIT_DONE) === 'true') {
+                    defaultUsersInitialized = true;
+                    return;
+                }
+                let users = getUsers();
+                const hasPachos = users.some(u => u.username === 'pachos');
+                const hasAdmin = users.some(u => u.username === 'admin');
+                if (!hasPachos) {
+                    users.push({
+                        id: generateId(),
+                        username: 'pachos',
+                        passwordHash: hashPassword('pachos77'),
+                        role: 'superadmin'
+                    });
+                }
+                if (!hasAdmin) {
+                    users.push({
+                        id: generateId(),
+                        username: 'admin',
+                        passwordHash: hashPassword('admin123'),
+                        role: 'admin'
+                    });
+                }
+                saveUsers(users);
+                localStorage.setItem(STORAGE.INIT_DONE, 'true');
+                defaultUsersInitialized = true;
+                console.log('Default users initialized (once).');
+            }
+
+            function resetDefaultUsers() {
+                if (!isSuperadmin()) {
+                    showToast('Hanya Superadmin yang dapat melakukan ini!', 'error');
+                    return;
+                }
+                if (!confirm('⚠️ Reset user default akan menghapus semua user dan membuat ulang user default. Lanjutkan?')) return;
+                let users = [];
+                users.push({
+                    id: generateId(),
+                    username: 'pachos',
+                    passwordHash: hashPassword('pachos77'),
+                    role: 'superadmin'
+                });
+                users.push({
+                    id: generateId(),
+                    username: 'admin',
+                    passwordHash: hashPassword('admin123'),
+                    role: 'admin'
+                });
+                saveUsers(users);
+                localStorage.setItem(STORAGE.INIT_DONE, 'true');
+                loadUserList();
+                document.getElementById('settingTotalUser').textContent = users.length;
+                showToast('🔄 User default berhasil direset.', 'success');
+            }
+
+            // ---------- SESSION ----------
+            let currentUser = null;
+            let loggedIn = false;
+            let sessionTimer = null;
+            let autoPulangTimer = null;
+
+            function generateToken(expiry, userHash) {
+                const payload = { exp: expiry };
+                const str = btoa(JSON.stringify(payload));
+                const sig = hashPassword(str + userHash);
+                return str + '.' + sig;
+            }
+
+            function verifyToken(token, userHash) {
+                try {
+                    const parts = token.split('.');
+                    if (parts.length !== 2) return null;
+                    const payloadStr = parts[0];
+                    const sig = parts[1];
+                    if (sig !== hashPassword(payloadStr + userHash)) return null;
+                    const payload = JSON.parse(atob(payloadStr));
+                    if (payload.exp && payload.exp > Date.now()) return payload;
+                    return null;
+                } catch (e) { return null; }
+            }
+
+            function getSession() {
+                const sess = sessionStorage.getItem(STORAGE.SESSION);
+                if (!sess) return null;
+                try {
+                    const data = JSON.parse(sess);
+                    if (!data.token || !data.userId) return null;
+                    const user = getUsers().find(u => u.id === data.userId);
+                    if (!user) return null;
+                    if (verifyToken(data.token, user.passwordHash)) {
+                        return { userId: user.id, username: user.username, role: user.role };
+                    }
+                    return null;
+                } catch (e) { return null; }
+            }
+
+            function setSession(login, userId) {
+                if (login && userId) {
+                    const users = getUsers();
+                    const user = users.find(u => u.id === userId);
+                    if (!user) {
+                        loggedIn = false;
+                        currentUser = null;
+                        updateUI();
+                        return;
+                    }
+                    const expiry = Date.now() + 60 * 60 * 1000;
+                    const token = generateToken(expiry, user.passwordHash);
+                    sessionStorage.setItem(STORAGE.SESSION, JSON.stringify({ token, userId: user.id }));
+                    loggedIn = true;
+                    currentUser = { id: user.id, username: user.username, role: user.role };
+                    if (sessionTimer) clearInterval(sessionTimer);
+                    sessionTimer = setInterval(() => {
+                        const sess = getSession();
+                        if (sess) {
+                            const u = getUsers().find(x => x.id === sess.userId);
+                            if (!u) return;
+                            const newExp = Date.now() + 60 * 60 * 1000;
+                            const newTok = generateToken(newExp, u.passwordHash);
+                            sessionStorage.setItem(STORAGE.SESSION, JSON.stringify({ token: newTok,
+                                userId: u.id }));
+                        }
+                    }, 5 * 60 * 1000);
+                    // Start auto pulang timer if enabled
+                    if (getAutoPulang()) {
+                        startAutoPulang();
+                    }
+                } else {
+                    sessionStorage.removeItem(STORAGE.SESSION);
+                    loggedIn = false;
+                    currentUser = null;
+                    if (sessionTimer) { clearInterval(sessionTimer);
+                        sessionTimer = null; }
+                    if (autoPulangTimer) { clearInterval(autoPulangTimer);
+                        autoPulangTimer = null; }
+                }
+                updateUI();
+                toggleFeatures();
+                renderToday();
+            }
+
+            function checkSession() {
+                const sess = getSession();
+                if (sess) {
+                    setSession(true, sess.userId);
+                } else {
+                    setSession(false);
+                }
+            }
+
+            function isSuperadmin() {
+                return currentUser && currentUser.role === 'superadmin';
+            }
+
+            function isAdmin() {
+                return currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin');
+            }
+
+            // ===== AUTO PULANG =====
+            function startAutoPulang() {
+                if (autoPulangTimer) clearInterval(autoPulangTimer);
+                autoPulangTimer = setInterval(function() {
+                    if (!getAutoPulang()) return;
+                    const now = new Date();
+                    const jamPulang = getJamPulang();
+                    const [hP, mP] = jamPulang.split(':').map(Number);
+                    const currentHour = now.getHours();
+                    const currentMinute = now.getMinutes();
+                    if (currentHour > hP || (currentHour === hP && currentMinute >= mP)) {
+                        const today = getToday();
+                        let attend = getAttend();
+                        let updated = false;
+                        attend = attend.map(rec => {
+                            if (rec.tanggal === today && !rec.jam_pulang) {
+                                rec.jam_pulang = getTimeNow();
+                                updated = true;
+                            }
+                            return rec;
+                        });
+                        if (updated) {
+                            saveAttend(attend);
+                            renderToday();
+                            showToast('🏠 Auto pulang: semua pegawai dipulangkan.', 'info');
+                        }
+                    }
+                }, 60000);
+            }
+
+            // ---------- TOAST ----------
+            function showToast(msg, type = 'info', duration = 3000) {
+                const container = document.getElementById('toastContainer');
+                if (!container) return;
+                const toast = document.createElement('div');
+                toast.className = 'toast ' + type;
+                const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+                toast.innerHTML = `
+                    <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+                    <span>${msg}</span>
+                    <button class="toast-close">&times;</button>
+                `;
+                container.appendChild(toast);
+                toast.querySelector('.toast-close').addEventListener('click', () => toast.remove());
+                setTimeout(() => { if (toast.parentNode) toast.remove(); }, duration);
+            }
+
+            // ---------- UI UPDATE ----------
+            function updateUI() {
+                const statusText = document.getElementById('statusText');
+                const roleBadge = document.getElementById('roleBadge');
+                const userDisplay = document.getElementById('userDisplay');
+                const adminStatus = document.getElementById('adminStatus');
+                const footerStatus = document.getElementById('footerStatusText');
+                const footerRole = document.getElementById('footerRoleBadge');
+                const footerUser = document.getElementById('footerUserDisplay');
+                const loginBtn = document.getElementById('footerLoginBtn');
+                const absenCepatLabel = document.getElementById('absenCepatRoleLabel');
+                const statsMini = document.getElementById('statsMini');
+
+                // Toggle minimalist stats (1 row) on successful login
+                if (statsMini) {
+                    if (loggedIn && currentUser) {
+                        statsMini.classList.add('mode-horizontal');
+                    } else {
+                        statsMini.classList.remove('mode-horizontal');
+                    }
+                }
+
+                if (currentUser) {
+                    if (currentUser.role === 'superadmin') {
+                        adminStatus.classList.add('superadmin');
+                        statusText.textContent = '✅ Superadmin';
+                        statusText.className = 'status-text unlocked';
+                        roleBadge.style.display = 'inline-block';
+                        roleBadge.textContent = 'SUPERADMIN';
+                        roleBadge.className = 'role-badge superadmin';
+                        userDisplay.textContent = `(${currentUser.username})`;
+
+                        footerStatus.textContent = '✅ Superadmin';
+                        footerStatus.className = 'status-text unlocked';
+                        footerRole.style.display = 'inline-block';
+                        footerRole.textContent = 'SUPERADMIN';
+                        footerRole.className = 'role-badge superadmin';
+                        footerUser.textContent = `(${currentUser.username})`;
+                        loginBtn.textContent = '🚪 Logout';
+                        loginBtn.className = 'btn-admin logout';
+
+                        absenCepatLabel.textContent = '🔒 Superadmin';
+                    } else {
+                        adminStatus.classList.remove('superadmin');
+                        statusText.textContent = '✅ Admin';
+                        statusText.className = 'status-text unlocked';
+                        roleBadge.style.display = 'inline-block';
+                        roleBadge.textContent = 'ADMIN';
+                        roleBadge.className = 'role-badge admin';
+                        userDisplay.textContent = `(${currentUser.username})`;
+
+                        footerStatus.textContent = '✅ Admin';
+                        footerStatus.className = 'status-text unlocked';
+                        footerRole.style.display = 'inline-block';
+                        footerRole.textContent = 'ADMIN';
+                        footerRole.className = 'role-badge admin';
+                        footerUser.textContent = `(${currentUser.username})`;
+                        loginBtn.textContent = '🚪 Logout';
+                        loginBtn.className = 'btn-admin logout';
+
+                        absenCepatLabel.textContent = '🔒 Admin';
+                    }
+                } else {
+                    adminStatus.classList.remove('superadmin');
+                    statusText.textContent = '🔒 Login';
+                    statusText.className = 'status-text locked';
+                    roleBadge.style.display = 'none';
+                    userDisplay.textContent = '';
+
+                    footerStatus.textContent = '🔒 Belum Login';
+                    footerStatus.className = 'status-text locked';
+                    footerRole.style.display = 'none';
+                    footerUser.textContent = '';
+                    loginBtn.textContent = '🔑 Login';
+                    loginBtn.className = 'btn-admin login';
+
+                    absenCepatLabel.textContent = '🔒 Superadmin';
+                }
+            }
+
+            function toggleFeatures() {
+                const hidden = document.getElementById('hiddenFeatures');
+                if (!hidden) return;
+                if (loggedIn && isAdmin()) {
+                    hidden.classList.add('show');
+                    applyFeatureVisibility();
+                } else {
+                    hidden.classList.remove('show');
+                }
+            }
+
+            function applyFeatureVisibility() {
+                const isSuper = isSuperadmin();
+                const isAdminUser = isAdmin();
+
+                // Superadmin only features (hidden from admin)
+                const superOnly = [
+                    'btnResetHari',
+                    'btnHapusData',
+                    'btnPulangkanSemua',
+                    'btnPengaturan',
+                    'absenCepatArea'  // Absen Cepat hanya untuk Superadmin
+                ];
+                superOnly.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (isSuper) el.classList.remove('hidden-feature');
+                        else el.classList.add('hidden-feature');
+                    }
+                });
+
+                // Admin features (for both admin & superadmin)
+                const adminFeatures = [
+                    'btnAbsen'  // Absen Semua untuk semua yang login
+                ];
+                adminFeatures.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (isAdminUser) el.classList.remove('hidden-feature');
+                        else el.classList.add('hidden-feature');
+                    }
+                });
+
+                // Backup & Restore buttons for admin (added to toolbar)
+                const toolbar = document.querySelector('.toolbar-login');
+                if (toolbar) {
+                    const existingBackup = document.getElementById('btnBackupDataMain');
+                    const existingRestore = document.getElementById('btnRestoreDataMain');
+                    if (existingBackup) existingBackup.remove();
+                    if (existingRestore) existingRestore.remove();
+
+                    if (isAdminUser) {
+                        const backupBtn = document.createElement('button');
+                        backupBtn.id = 'btnBackupDataMain';
+                        backupBtn.className = 'btn btn-primary';
+                        backupBtn.textContent = '💾 Backup Data';
+                        backupBtn.addEventListener('click', function() {
+                            if (!isAdmin()) { showToast('Akses ditolak!', 'error'); return; }
+                            backupData();
+                        });
+                        toolbar.appendChild(backupBtn);
+
+                        const restoreBtn = document.createElement('button');
+                        restoreBtn.id = 'btnRestoreDataMain';
+                        restoreBtn.className = 'btn btn-warning';
+                        restoreBtn.textContent = '📂 Restore Data';
+                        restoreBtn.addEventListener('click', function() {
+                            if (!isAdmin()) { showToast('Akses ditolak!', 'error'); return; }
+                            document.getElementById('fileRestore').click();
+                        });
+                        toolbar.appendChild(restoreBtn);
+                    }
+                }
+            }
+
+            // ===== BACKUP & RESTORE FUNCTIONS =====
+            function backupData() {
+                if (!isAdmin()) { showToast('Akses ditolak!', 'error'); return; }
+                const data = {
+                    version: '1.0',
+                    timestamp: new Date().toISOString(),
+                    master: getMaster(),
+                    attend: getAttend(),
+                    users: getUsers(),
+                    settings: {
+                        jamMasuk: getJamMasuk(),
+                        jamPulang: getJamPulang(),
+                        autoPulang: getAutoPulang()
+                    }
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup_pecah_${getToday()}_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('💾 Backup data berhasil!', 'success');
+            }
+
+            // ===== CLOCK =====
+            function updateClock() {
+                const el = document.getElementById('clockDisplay');
+                if (!el) return;
+                const now = new Date();
+                const formatter = new Intl.DateTimeFormat('id-ID', {
+                    timeZone: 'Asia/Makassar',
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                el.textContent = '🕐 ' + formatter.format(now) + ' WITA';
+            }
+
+            // ---------- RENDER TODAY ----------
+            function renderToday() {
+                const today = getToday();
+                const master = getMaster();
+                const attend = getAttend().filter(x => x.tanggal === today);
+
+                const total = master.length;
+                const hadir = attend.filter(x => x.status === 'Hadir').length;
+                const izin = attend.filter(x => x.status === 'Izin').length;
+                const sakit = attend.filter(x => x.status === 'Sakit').length;
+                const tugas = attend.filter(x => x.status === 'Tugas').length;
+                const belum = Math.max(0, total - attend.length);
+                const totalTerlambat = attend.reduce((s, r) => s + (r.terlambat || 0), 0);
+                const jmlTerlambat = attend.filter(r => r.terlambat > 0).length;
+
+                document.getElementById('total').textContent = total;
+                document.getElementById('totalHadir').textContent = hadir;
+                document.getElementById('totalIzin').textContent = izin;
+                document.getElementById('totalSakit').textContent = sakit;
+                document.getElementById('totalTugas').textContent = tugas;
+                document.getElementById('totalBelum').textContent = belum;
+                document.getElementById('totalTerlambat').textContent = totalTerlambat;
+                document.getElementById('totalJmlTerlambat').textContent = jmlTerlambat;
+
+                const container = document.getElementById('employeeListLogin');
+                if (!container) return;
+                if (!loggedIn || !isAdmin()) {
+                    container.innerHTML =
+                        '<div style="padding:16px;text-align:center;color:#888;">Silakan login untuk melihat data.</div>';
+                    return;
+                }
+                if (!master.length) {
+                    container.innerHTML = '<div style="padding:16px;text-align:center;color:#888;">Belum ada data master.</div>';
+                    return;
+                }
+
+                let html = '';
+                master.forEach(emp => {
+                    const rec = attend.find(x => x.employeeId === emp.id);
+                    let statusText = 'Belum',
+                        statusClass = 'badge-Belum',
+                        actions = '',
+                        waktuHTML = '',
+                        alasanHTML = '';
+                    if (rec) {
+                        statusText = rec.status || 'Belum';
+                        statusClass = 'badge-' + statusText;
+                        const datang = rec.jam_datang || '-';
+                        const pulang = rec.jam_pulang || '-';
+                        let terlambatInfo = rec.terlambat > 0 ? `⏰ Terlambat ${rec.terlambat} mnt` : '';
+                        waktuHTML = `<div class="waktu">🟢 ${datang} | 🔴 ${pulang} ${terlambatInfo}</div>`;
+                        if (rec.alasan) {
+                            alasanHTML = `<div class="alasan-text">📝 ${sanitize(rec.alasan)}</div>`;
+                        }
+                        if (rec.jam_pulang) {
+                            actions =
+                                `<span class="badge-status ${statusClass}">${statusText}</span>
+                                <button class="btn-sm btn-edit-sm" data-action="editStatus" data-id="${emp.id}">✏️</button>`;
+                            if (isAdmin()) {
+                                actions +=
+                                    `<button class="btn-sm btn-hapus-sm" data-action="hapusAbsen" data-id="${emp.id}">✖</button>`;
+                            }
+                        } else {
+                            actions =
+                                `<span class="badge-status ${statusClass}">${statusText}</span>
+                                <button class="btn-sm btn-edit-sm" data-action="editStatus" data-id="${emp.id}">✏️</button>
+                                <button class="btn-sm btn-pulang-sm" data-action="pulang" data-id="${emp.id}">🏠 Pulang</button>`;
+                            if (isAdmin()) {
+                                actions +=
+                                    `<button class="btn-sm btn-hapus-sm" data-action="hapusAbsen" data-id="${emp.id}">✖</button>`;
+                            }
+                        }
+                    } else {
+                        waktuHTML = '<div class="waktu">Belum absen</div>';
+                        actions =
+                            `<span class="badge-status ${statusClass}">${statusText}</span>
+                            <button class="btn-sm btn-masuk-sm" data-action="masuk" data-id="${emp.id}">✅ Masuk</button>`;
+                    }
+                    html +=
+                        `<div class="emp-item" data-empid="${emp.id}"><div class="info"><div class="nama">${sanitize(emp.nama)}</div><div class="jabatan">${sanitize(emp.jabatan)}</div>${waktuHTML}${alasanHTML}</div><div class="actions">${actions}</div></div>`;
+                });
+                container.innerHTML = html;
+                container.querySelectorAll('[data-action]').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const id = this.dataset.id;
+                        const action = this.dataset.action;
+                        handleEmployeeAction(action, id);
+                    });
+                });
+            }
+
+            // ---------- HANDLE EMPLOYEE ACTIONS ----------
+            function handleEmployeeAction(action, id) {
+                switch (action) {
+                    case 'masuk':
+                        absenMasuk(id);
+                        break;
+                    case 'pulang':
+                        absenPulang(id);
+                        break;
+                    case 'editStatus':
+                        bukaEditStatus(id);
+                        break;
+                    case 'hapusAbsen':
+                        if (isAdmin()) hapusAbsenHariIni(id);
+                        else showToast('Akses ditolak', 'error');
+                        break;
+                }
+            }
+
+            // ---------- ABSENSI ----------
+            function absenMasuk(id) {
+                if (!loggedIn || !isAdmin()) { showToast('Login sebagai Admin.', 'error'); return; }
+                const emp = getMaster().find(x => x.id === id);
+                if (!emp) { showToast('Pegawai tidak ditemukan', 'error'); return; }
+                const today = getToday();
+                let attend = getAttend();
+                if (attend.some(x => x.employeeId === id && x.tanggal === today)) {
+                    showToast(`${emp.nama} sudah absen hari ini.`, 'warning');
+                    return;
+                }
+                const jam = getTimeNow();
+                attend.push({
+                    employeeId: emp.id,
+                    nama: emp.nama,
+                    jabatan: emp.jabatan,
+                    tanggal: today,
+                    jam_datang: jam,
+                    jam_pulang: '',
+                    status: 'Hadir',
+                    alasan: '',
+                    terlambat: hitungTerlambat(jam)
+                });
+                saveAttend(attend);
+                renderToday();
+                showToast(`✅ ${emp.nama} absen masuk.`, 'success');
+            }
+
+            function absenPulang(id) {
+                if (!loggedIn || !isAdmin()) { showToast('Login sebagai Admin.', 'error'); return; }
+                const today = getToday();
+                let attend = getAttend();
+                const rec = attend.find(x => x.employeeId === id && x.tanggal === today);
+                if (!rec) { showToast('Data tidak ditemukan.', 'error'); return; }
+                if (rec.jam_pulang) { showToast(`Sudah pulang jam ${rec.jam_pulang}.`, 'warning'); return; }
+                rec.jam_pulang = getTimeNow();
+                saveAttend(attend);
+                renderToday();
+                showToast(`🏠 ${rec.nama} pulang.`, 'success');
+            }
+
+            function hapusAbsenHariIni(id) {
+                if (!confirm('Hapus absensi hari ini untuk pegawai ini?')) return;
+                const today = getToday();
+                saveAttend(getAttend().filter(x => !(x.employeeId === id && x.tanggal === today)));
+                renderToday();
+                showToast('Absen dihapus.', 'info');
+            }
+
+            function bukaEditStatus(id) {
+                const rec = getAttend().find(x => x.employeeId === id && x.tanggal === getToday());
+                if (!rec) { showToast('Data tidak ditemukan.', 'error'); return; }
+                window.editTargetId = id;
+                document.getElementById('editNamaDisplay').textContent = `✏️ ${rec.nama} (${rec.jabatan})`;
+                document.getElementById('editStatusSelect').value = rec.status;
+                document.getElementById('editAlasanInput').value = rec.alasan || '';
+                toggleEditAlasan(rec.status);
+                document.getElementById('modalEditStatus').classList.add('active');
+            }
+
+            function toggleEditAlasan(status) {
+                const group = document.getElementById('editAlasanGroup');
+                if (!group) return;
+                if (['Izin', 'Tugas'].includes(status)) group.style.display = 'block';
+                else group.style.display = 'none';
+            }
+
+            function simpanEditStatus() {
+                if (!window.editTargetId) return;
+                const newStatus = document.getElementById('editStatusSelect').value;
+                const alasan = document.getElementById('editAlasanInput').value.trim();
+                let attend = getAttend();
+                const rec = attend.find(x => x.employeeId === window.editTargetId && x.tanggal === getToday());
+                if (rec) {
+                    rec.status = newStatus;
+                    rec.alasan = (['Izin', 'Tugas'].includes(newStatus)) ? alasan : '';
+                    saveAttend(attend);
+                }
+                document.getElementById('modalEditStatus').classList.remove('active');
+                window.editTargetId = null;
+                renderToday();
+                showToast('Status diperbarui.', 'success');
+            }
+
+            // ---------- LOGIN / LOGOUT ----------
+            function showLoginModal() {
+                const isSetup = getUsers().length === 0;
+                document.getElementById('loginModalTitle').textContent = isSetup ? '🔑 Setup Superadmin' : '🔐 Login';
+                document.getElementById('setupWarning').style.display = isSetup ? 'block' : 'none';
+                document.getElementById('setupConfirmGroup').style.display = isSetup ? 'block' : 'none';
+                document.getElementById('adminUsername').value = '';
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('adminPasswordConfirm').value = '';
+                document.getElementById('adminLoginError').style.display = 'none';
+                document.getElementById('loginRateMsg').style.display = 'none';
+                document.getElementById('adminLoginModal').classList.add('active');
+            }
+
+            function closeLoginModal() {
+                document.getElementById('adminLoginModal').classList.remove('active');
+            }
+
+            function handleLogin() {
+                const username = sanitize(document.getElementById('adminUsername').value);
+                const password = document.getElementById('adminPassword').value;
+                const isSetup = getUsers().length === 0;
+
+                if (isSetup) {
+                    const confirmPw = document.getElementById('adminPasswordConfirm').value;
+                    if (!username || username.length < 2) {
+                        document.getElementById('adminLoginError').textContent = 'Username minimal 2 karakter!';
+                        document.getElementById('adminLoginError').style.display = 'block';
+                        return;
+                    }
+                    if (!password || password.length < 4) {
+                        document.getElementById('adminLoginError').textContent = 'Password minimal 4 karakter!';
+                        document.getElementById('adminLoginError').style.display = 'block';
+                        return;
+                    }
+                    if (password !== confirmPw) {
+                        document.getElementById('adminLoginError').textContent = 'Password dan konfirmasi tidak cocok!';
+                        document.getElementById('adminLoginError').style.display = 'block';
+                        return;
+                    }
+                    const result = createUser(username, password, 'superadmin');
+                    if (result.success) {
+                        const user = findUser(username);
+                        if (user) {
+                            setSession(true, user.id);
+                        }
+                        closeLoginModal();
+                        showToast('✅ Setup Superadmin berhasil!', 'success');
+                    } else {
+                        document.getElementById('adminLoginError').textContent = result.message;
+                        document.getElementById('adminLoginError').style.display = 'block';
+                    }
+                    return;
+                }
+
+                const user = authenticate(username, password);
+                if (user) {
+                    setSession(true, user.id);
+                    closeLoginModal();
+                    showToast(`Login berhasil (${user.role.toUpperCase()})`, 'success');
+                } else {
+                    document.getElementById('adminLoginError').textContent = 'Username atau password salah!';
+                    document.getElementById('adminLoginError').style.display = 'block';
+                }
+            }
+
+            function logout() {
+                setSession(false);
+                document.getElementById('employeeListLogin').innerHTML =
+                    '<div style="padding:16px;text-align:center;color:#888;">Silakan login untuk melihat data.</div>';
+                document.getElementById('rekapResult').innerHTML = '';
+                document.getElementById('historyBody').innerHTML = '';
+                document.getElementById('modalPengaturan').classList.remove('active');
+                showToast('🚪 Logout berhasil.', 'info');
+            }
+
+            // ===== FITUR SUPERVISOR =====
+            document.getElementById('btnResetHari').addEventListener('click', function() {
+                if (!isSuperadmin()) {
+                    showToast('Hanya Superadmin yang dapat melakukan ini!', 'error');
+                    return;
+                }
+                if (!confirm('⚠️ Yakin ingin mereset semua absensi hari ini? Data akan dihapus permanen!')) return;
+                const today = getToday();
+                const attend = getAttend();
+                const filtered = attend.filter(x => x.tanggal !== today);
+                saveAttend(filtered);
+                renderToday();
+                showToast('✅ Semua absensi hari ini telah direset.', 'success');
+            });
+
+            document.getElementById('btnHapusData').addEventListener('click', function() {
+                if (!isSuperadmin()) {
+                    showToast('Hanya Superadmin yang dapat melakukan ini!', 'error');
+                    return;
+                }
+                if (!confirm('⚠️⚠️ Yakin ingin menghapus SEMUA data absensi? Tindakan ini TIDAK DAPAT DIURUNGKAN!')) return;
+                saveAttend([]);
+                renderToday();
+                showToast('🗑️ Semua data absensi telah dihapus.', 'warning');
+            });
+
+            document.getElementById('btnPulangkanSemua').addEventListener('click', function() {
+                if (!isSuperadmin()) {
+                    showToast('Hanya Superadmin yang dapat melakukan ini!', 'error');
+                    return;
+                }
+                if (!confirm('Pulangkan semua pegawai yang belum pulang hari ini?')) return;
+                const today = getToday();
+                let attend = getAttend();
+                let updated = false;
+                attend = attend.map(rec => {
+                    if (rec.tanggal === today && !rec.jam_pulang) {
+                        rec.jam_pulang = getTimeNow();
+                        updated = true;
+                    }
+                    return rec;
+                });
+                if (updated) {
+                    saveAttend(attend);
+                    renderToday();
+                    showToast('🏠 Semua pegawai telah dipulangkan.', 'success');
+                } else {
+                    showToast('Semua pegawai sudah pulang.', 'info');
+                }
+            });
+
+            // Absen Semua - untuk Admin & Superadmin
+            document.getElementById('btnAbsen').addEventListener('click', function() {
+                if (!isAdmin()) {
+                    showToast('Hanya Admin yang dapat melakukan ini!', 'error');
+                    return;
+                }
+                if (!confirm('Absen semua pegawai yang belum absen hari ini?')) return;
+                const today = getToday();
+                const master = getMaster();
+                let attend = getAttend();
+                let added = 0;
+                master.forEach(emp => {
+                    const exists = attend.some(x => x.employeeId === emp.id && x.tanggal === today);
+                    if (!exists) {
+                        const jam = getTimeNow();
+                        attend.push({
+                            employeeId: emp.id,
+                            nama: emp.nama,
+                            jabatan: emp.jabatan,
+                            tanggal: today,
+                            jam_datang: jam,
+                            jam_pulang: '',
+                            status: 'Hadir',
+                            alasan: '',
+                            terlambat: hitungTerlambat(jam)
+                        });
+                        added++;
+                    }
+                });
+                if (added > 0) {
+                    saveAttend(attend);
+                    renderToday();
+                    showToast(`✅ ${added} pegawai berhasil diabsen.`, 'success');
+                } else {
+                    showToast('Semua pegawai sudah absen.', 'info');
+                }
+            });
+
+            // Absen Cepat - Hanya Superadmin
+            document.getElementById('btnAbsenCepat').addEventListener('click', function() {
+                if (!isSuperadmin()) {
+                    showToast('Hanya Superadmin yang dapat menggunakan fitur ini!', 'error');
+                    return;
+                }
+                const nama = sanitize(document.getElementById('inputNamaCepat').value);
+                const jabatan = sanitize(document.getElementById('inputJabatanCepat').value);
+                const status = document.getElementById('statusCepat').value;
+                const alasan = sanitize(document.getElementById('alasanCepat').value);
+                if (!nama) {
+                    showToast('Nama harus diisi!', 'error');
+                    return;
+                }
+                const today = getToday();
+                let master = getMaster();
+                let emp = master.find(x => x.nama.toLowerCase() === nama.toLowerCase());
+                if (!emp) {
+                    emp = {
+                        id: generateId(),
+                        nama: nama,
+                        jabatan: jabatan || 'Staff'
+                    };
+                    master.push(emp);
+                    saveMaster(master);
+                }
+                let attend = getAttend();
+                const exists = attend.some(x => x.employeeId === emp.id && x.tanggal === today);
+                if (exists) {
+                    showToast(`${emp.nama} sudah absen hari ini.`, 'warning');
+                    return;
+                }
+                const jam = getTimeNow();
+                const rec = {
+                    employeeId: emp.id,
+                    nama: emp.nama,
+                    jabatan: emp.jabatan,
+                    tanggal: today,
+                    jam_datang: jam,
+                    jam_pulang: '',
+                    status: status || 'Hadir',
+                    alasan: (status === 'Izin' || status === 'Tugas') ? alasan : '',
+                    terlambat: hitungTerlambat(jam)
+                };
+                attend.push(rec);
+                saveAttend(attend);
+                renderToday();
+                document.getElementById('inputNamaCepat').value = '';
+                document.getElementById('inputJabatanCepat').value = '';
+                document.getElementById('alasanCepat').value = '';
+                showToast(`✅ ${emp.nama} berhasil diabsen (${status}).`, 'success');
+            });
+
+            document.getElementById('statusCepat').addEventListener('change', function() {
+                const container = document.getElementById('alasanCepatContainer');
+                if (['Izin', 'Tugas'].includes(this.value)) {
+                    container.classList.add('show');
+                } else {
+                    container.classList.remove('show');
+                }
+            });
+
+            // ===== FITUR REKAP =====
+            document.getElementById('btnTampilkanRekap').addEventListener('click', function() {
+                const start = document.getElementById('filterStart').value;
+                const end = document.getElementById('filterEnd').value;
+                const nama = sanitize(document.getElementById('filterNama').value);
+                const status = document.getElementById('filterStatus').value;
+                let attend = getAttend();
+                if (start) attend = attend.filter(x => x.tanggal >= start);
+                if (end) attend = attend.filter(x => x.tanggal <= end);
+                if (nama) attend = attend.filter(x => x.nama.toLowerCase().includes(nama.toLowerCase()));
+                if (status) attend = attend.filter(x => x.status === status);
+                const resultDiv = document.getElementById('rekapResult');
+                if (attend.length === 0) {
+                    resultDiv.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">Tidak ada data.</div>';
+                    return;
+                }
+                let html = `<table class="rekap-table">
+                    <thead><tr>
+                        <th>Tanggal</th><th>Nama</th><th>Jabatan</th>
+                        <th>Datang</th><th>Pulang</th><th>Status</th><th>Alasan</th><th>Terlambat</th>
+                    </tr></thead><tbody>`;
+                attend.forEach(rec => {
+                    html += `<tr>
+                        <td>${rec.tanggal}</td>
+                        <td>${sanitize(rec.nama)}</td>
+                        <td>${sanitize(rec.jabatan)}</td>
+                        <td>${rec.jam_datang || '-'}</td>
+                        <td>${rec.jam_pulang || '-'}</td>
+                        <td><span class="badge-status badge-${rec.status}">${rec.status}</span></td>
+                        <td>${rec.alasan ? sanitize(rec.alasan) : '-'}</td>
+                        <td>${rec.terlambat > 0 ? rec.terlambat + ' mnt' : '-'}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                resultDiv.innerHTML = html;
+            });
+
+            document.getElementById('btnExportRekap').addEventListener('click', function() {
+                const resultDiv = document.getElementById('rekapResult');
+                const table = resultDiv.querySelector('table');
+                if (!table) {
+                    showToast('Tidak ada data untuk diexport.', 'warning');
+                    return;
+                }
+                const btn = this;
+                btn.classList.add('btn-loading');
+                btn.disabled = true;
+                try {
+                    const wb = XLSX.utils.table_to_book(table, { sheet: "Rekap Kehadiran" });
+                    XLSX.writeFile(wb, `rekap_kehadiran_${getToday()}.xlsx`);
+                    showToast('📊 Export berhasil!', 'success');
+                } catch (e) {
+                    showToast('Gagal export: ' + e.message, 'error');
+                } finally {
+                    btn.classList.remove('btn-loading');
+                    btn.disabled = false;
+                }
+            });
+
+            document.getElementById('btnResetFilter').addEventListener('click', function() {
+                document.getElementById('filterStart').value = '';
+                document.getElementById('filterEnd').value = '';
+                document.getElementById('filterNama').value = '';
+                document.getElementById('filterStatus').value = '';
+                document.getElementById('rekapResult').innerHTML = '';
+            });
+
+            // ===== FITUR HISTORY =====
+            document.getElementById('btnLoadHistory').addEventListener('click', function() {
+                const date = document.getElementById('filterDate').value;
+                const onlyTerlambat = document.getElementById('filterTerlambatHistory').checked;
+                const showBelum = document.getElementById('filterBelumHistory').checked;
+                if (!date) {
+                    showToast('Pilih tanggal terlebih dahulu.', 'warning');
+                    return;
+                }
+                let attend = getAttend().filter(x => x.tanggal === date);
+                const master = getMaster();
+
+                if (showBelum) {
+                    const result = [];
+                    master.forEach(emp => {
+                        const rec = attend.find(x => x.employeeId === emp.id);
+                        if (rec) {
+                            result.push(rec);
+                        } else {
+                            result.push({
+                                employeeId: emp.id,
+                                nama: emp.nama,
+                                jabatan: emp.jabatan,
+                                tanggal: date,
+                                jam_datang: '-',
+                                jam_pulang: '-',
+                                status: 'Belum',
+                                alasan: '',
+                                terlambat: 0
+                            });
+                        }
+                    });
+                    attend = result;
+                }
+
+                if (onlyTerlambat) {
+                    attend = attend.filter(x => x.terlambat > 0);
+                }
+
+                const tbody = document.getElementById('historyBody');
+                if (attend.length === 0) {
+                    tbody.innerHTML =
+                        '<tr><td colspan="7" style="text-align:center;padding:20px;color:#888;">Tidak ada data.</td></tr>';
+                    return;
+                }
+                let html = '';
+                attend.forEach(rec => {
+                    html += `<tr>
+                        <td>${sanitize(rec.nama)}</td>
+                        <td>${rec.jam_datang || '-'}</td>
+                        <td>${rec.jam_pulang || '-'}</td>
+                        <td><span class="badge-status badge-${rec.status}">${rec.status}</span></td>
+                        <td>${rec.alasan ? sanitize(rec.alasan) : '-'}</td>
+                        <td>${rec.terlambat > 0 ? rec.terlambat + ' mnt' : '-'}</td>
+                        <td>
+                            ${rec.status !== 'Belum' && isAdmin() ? `<button class="btn-sm btn-edit-sm" onclick="editHistory('${rec.employeeId}','${rec.tanggal}')">✏️</button>` : '-'}
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            });
+
+            document.getElementById('btnResetHistory').addEventListener('click', function() {
+                document.getElementById('filterDate').value = '';
+                document.getElementById('filterTerlambatHistory').checked = false;
+                document.getElementById('filterBelumHistory').checked = false;
+                document.getElementById('historyBody').innerHTML = '';
+                showToast('Kembali ke tampilan hari ini.', 'info');
+            });
+
+            window.editHistory = function(employeeId, tanggal) {
+                if (!isAdmin()) {
+                    showToast('Akses ditolak.', 'error');
+                    return;
+                }
+                const rec = getAttend().find(x => x.employeeId === employeeId && x.tanggal === tanggal);
+                if (!rec) {
+                    showToast('Data tidak ditemukan.', 'error');
+                    return;
+                }
+                window.editTargetId = employeeId;
+                document.getElementById('editNamaDisplay').textContent = `✏️ ${rec.nama} (${rec.jabatan}) - ${tanggal}`;
+                document.getElementById('editStatusSelect').value = rec.status;
+                document.getElementById('editAlasanInput').value = rec.alasan || '';
+                toggleEditAlasan(rec.status);
+                document.getElementById('modalEditStatus').classList.add('active');
+            };
+
+            // ===== SEARCH =====
+            const searchInput = document.getElementById('searchInput');
+            const searchClear = document.getElementById('searchClear');
+            const searchCount = document.getElementById('searchCount');
+
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                const items = document.querySelectorAll('.emp-item');
+                let count = 0;
+                items.forEach(item => {
+                    const nama = item.querySelector('.nama')?.textContent?.toLowerCase() || '';
+                    const jabatan = item.querySelector('.jabatan')?.textContent?.toLowerCase() || '';
+                    const match = nama.includes(query) || jabatan.includes(query);
+                    item.style.display = match ? 'flex' : 'none';
+                    if (match) count++;
+                });
+                searchClear.classList.toggle('show', query.length > 0);
+                searchCount.textContent = query ? `Menampilkan ${count} dari ${items.length}` : '';
+            });
+
+            searchClear.addEventListener('click', function() {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+            });
+
+            // ===== PENGATURAN (Superadmin only) =====
+            function loadPengaturan() {
+                document.getElementById('settingJamMasuk').value = getJamMasuk();
+                document.getElementById('settingJamPulang').value = getJamPulang();
+                document.getElementById('settingAutoPulang').checked = getAutoPulang();
+                loadUserList();
+                loadPegawaiList();
+                document.getElementById('settingTotalPegawai').textContent = getMaster().length;
+                document.getElementById('settingTotalAbsensi').textContent = getAttend().length;
+                document.getElementById('settingTotalUser').textContent = getUsers().length;
+            }
+
+            function loadUserList() {
+                const users = getUsers();
+                const container = document.getElementById('userList');
+                if (!container) return;
+                if (users.length === 0) {
+                    container.innerHTML = '<div style="padding:10px;text-align:center;color:#888;">Belum ada user terdaftar.</div>';
+                    return;
+                }
+                let html = '';
+                users.forEach(user => {
+                    const isCurrent = currentUser && currentUser.id === user.id;
+                    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:white;border-radius:6px;margin-bottom:4px;border:1px solid #e2e8f0;">
+                        <div>
+                            <strong>${sanitize(user.username)}</strong>
+                            <span class="role-badge ${user.role === 'superadmin' ? 'superadmin' : 'admin'}" style="font-size:10px;margin-left:6px;">${user.role.toUpperCase()}</span>
+                            ${isCurrent ? ' <span style="font-size:11px;color:#28a745;">(Anda)</span>' : ''}
+                        </div>
+                        ${!isCurrent && isSuperadmin() ? `<button class="btn-sm btn-danger" onclick="hapusUser('${user.id}')">🗑️</button>` : ''}
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }
+
+            function loadPegawaiList() {
+                const master = getMaster();
+                const container = document.getElementById('pegawaiList');
+                if (!container) return;
+                if (master.length === 0) {
+                    container.innerHTML = '<div style="padding:10px;text-align:center;color:#888;">Belum ada pegawai terdaftar.</div>';
+                    return;
+                }
+                let html = '';
+                master.forEach(emp => {
+                    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:white;border-radius:6px;margin-bottom:4px;border:1px solid #e2e8f0;">
+                        <div>
+                            <strong>${sanitize(emp.nama)}</strong>
+                            <span style="font-size:11px;color:#666;margin-left:6px;">${sanitize(emp.jabatan)}</span>
+                        </div>
+                        ${isSuperadmin() ? `<button class="btn-sm btn-danger" onclick="hapusPegawai('${emp.id}')">🗑️</button>` : ''}
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }
+
+            window.hapusPegawai = function(empId) {
+                if (!isSuperadmin()) {
+                    showToast('Hanya Superadmin yang dapat menghapus pegawai!', 'error');
+                    return;
+                }
+                const emp = getMaster().find(x => x.id === empId);
+                if (!emp) return;
+                if (!confirm(`Yakin ingin menghapus pegawai "${emp.nama}" dari master?`)) return;
+                let master = getMaster().filter(x => x.id !== empId);
+                saveMaster(master);
+                let attend = getAttend().filter(x => x.employeeId !== empId);
+                saveAttend(attend);
+                loadPegawaiList();
+                document.getElementById('settingTotalPegawai').textContent = master.length;
+                renderToday();
+                showToast(`✅ Pegawai "${emp.nama}" telah dihapus.`, 'success');
+            };
+
+            window.hapusUser = function(userId) {
+                if (!isSuperadmin()) {
+                    showToast('Hanya Superadmin yang dapat menghapus user!', 'error');
+                    return;
+                }
+                if (!confirm('Yakin ingin menghapus user ini?')) return;
+                let users = getUsers().filter(u => u.id !== userId);
+                saveUsers(users);
+                loadUserList();
+                document.getElementById('settingTotalUser').textContent = users.length;
+                showToast('User berhasil dihapus.', 'success');
+            };
+
+            document.getElementById('btnRefreshPegawai').addEventListener('click', function() {
+                loadPegawaiList();
+                showToast('Daftar pegawai diperbarui.', 'info');
+            });
+
+            document.getElementById('btnTambahUser').addEventListener('click', function() {
+                if (!isSuperadmin()) {
+                    showToast('Hanya Superadmin yang dapat menambah user!', 'error');
+                    return;
+                }
+                const username = sanitize(document.getElementById('newUsername').value);
+                const password = document.getElementById('newPassword').value;
+                const role = document.getElementById('newUserRole').value;
+                if (!username || username.length < 2) {
+                    showToast('Username minimal 2 karakter!', 'error');
+                    return;
+                }
+                if (!password || password.length < 4) {
+                    showToast('Password minimal 4 karakter!', 'error');
+                    return;
+                }
+                const result = createUser(username, password, role);
+                if (result.success) {
+                    document.getElementById('newUsername').value = '';
+                    document.getElementById('newPassword').value = '';
+                    loadUserList();
+                    document.getElementById('settingTotalUser').textContent = getUsers().length;
+                    showToast(`✅ User ${username} berhasil ditambahkan sebagai ${role}.`, 'success');
+                } else {
+                    showToast(result.message, 'error');
+                }
+            });
+
+            document.getElementById('btnSimpanPengaturan').addEventListener('click', function() {
+                if (!isSuperadmin()) {
+                    showToast('Akses ditolak!', 'error');
+                    return;
+                }
+                const jamMasuk = document.getElementById('settingJamMasuk').value;
+                const jamPulang = document.getElementById('settingJamPulang').value;
+                const autoPulang = document.getElementById('settingAutoPulang').checked;
+                setJamMasuk(jamMasuk);
+                setJamPulang(jamPulang);
+                setAutoPulang(autoPulang);
+                if (autoPulang) {
+                    startAutoPulang();
+                } else {
+                    if (autoPulangTimer) { clearInterval(autoPulangTimer);
+                        autoPulangTimer = null; }
+                }
+                showToast('✅ Pengaturan berhasil disimpan!', 'success');
+                document.getElementById('modalPengaturan').classList.remove('active');
+            });
+
+            document.getElementById('btnBackupData').addEventListener('click', function() {
+                if (!isSuperadmin()) {
+                    showToast('Hanya Superadmin yang dapat melakukan backup!', 'error');
+                    return;
+                }
+                backupData();
+            });
+
+            document.getElementById('btnRestoreData').addEventListener('click', function() {
+                if (!isSuperadmin()) {
+                    showToast('Hanya Superadmin yang dapat melakukan restore!', 'error');
+                    return;
+                }
+                if (!confirm('⚠️ Restore data akan MENIMPA semua data saat ini. Lanjutkan?')) return;
+                document.getElementById('fileRestore').click();
+            });
+
+            document.getElementById('fileRestore').addEventListener('change', function(e) {
+                if (!this.files || !this.files[0]) return;
+                const file = this.files[0];
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (!data.master || !data.attend) {
+                            showToast('Format file tidak valid!', 'error');
+                            return;
+                        }
+                        if (!confirm(`Restore data dari ${data.timestamp || 'file'}?`)) return;
+                        if (data.master) saveMaster(data.master);
+                        if (data.attend) saveAttend(data.attend);
+                        if (data.users) saveUsers(data.users);
+                        if (data.settings) {
+                            if (data.settings.jamMasuk) setJamMasuk(data.settings.jamMasuk);
+                            if (data.settings.jamPulang) setJamPulang(data.settings.jamPulang);
+                            if (data.settings.autoPulang !== undefined) setAutoPulang(data.settings.autoPulang);
+                        }
+                        loadPengaturan();
+                        renderToday();
+                        document.getElementById('settingTotalPegawai').textContent = getMaster().length;
+                        document.getElementById('settingTotalAbsensi').textContent = getAttend().length;
+                        document.getElementById('settingTotalUser').textContent = getUsers().length;
+                        showToast('✅ Restore data berhasil!', 'success');
+                    } catch (err) {
+                        showToast('Gagal membaca file: ' + err.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
+                this.value = '';
+            });
+
+            document.getElementById('btnResetDefaultUsers').addEventListener('click', function() {
+                resetDefaultUsers();
+            });
+
+            document.getElementById('btnPengaturan').addEventListener('click', function() {
+                if (!isSuperadmin()) {
+                    showToast('Akses ditolak!', 'error');
+                    return;
+                }
+                loadPengaturan();
+                document.getElementById('modalPengaturan').classList.add('active');
+            });
+
+            document.getElementById('btnTutupPengaturan').addEventListener('click', function() {
+                document.getElementById('modalPengaturan').classList.remove('active');
+            });
+
+            // ===== CLOSE MODALS =====
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.modal.active').forEach(modal => {
+                        modal.classList.remove('active');
+                    });
+                }
+            });
+
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) this.classList.remove('active');
+                });
+            });
+
+            // ===== INIT =====
+            function init() {
+                console.log('Inisialisasi PECAH v2 - Absen Cepat hanya Superadmin');
+                initDefaultUsers();
+
+                if (!localStorage.getItem(STORAGE.JAM_MASUK)) setJamMasuk('07:15');
+                if (!localStorage.getItem(STORAGE.JAM_PULANG)) setJamPulang('16:00');
+                if (localStorage.getItem(STORAGE.AUTO_PULANG) === null) setAutoPulang(false);
+
+                checkSession();
+                updateClock();
+                setInterval(updateClock, 1000);
+                renderToday();
+
+                document.getElementById('footerLoginBtn').addEventListener('click', function() {
+                    if (loggedIn && currentUser) {
+                        logout();
+                    } else {
+                        showLoginModal();
+                    }
+                });
+
+                document.getElementById('btnLoginSubmit').addEventListener('click', handleLogin);
+                document.getElementById('btnLoginBatal').addEventListener('click', closeLoginModal);
+
+                document.getElementById('btnSimpanStatus').addEventListener('click', simpanEditStatus);
+                document.getElementById('btnBatalStatus').addEventListener('click', function() {
+                    document.getElementById('modalEditStatus').classList.remove('active');
+                    window.editTargetId = null;
+                });
+
+                document.getElementById('adminPassword').addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') handleLogin();
+                });
+                document.getElementById('adminPasswordConfirm').addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') handleLogin();
+                });
+
+                console.log('✅ PECAH v2 siap digunakan');
+                console.log('User tersedia:', getUsers().map(u => u.username));
+                console.log('Auto pulang:', getAutoPulang() ? 'Aktif' : 'Nonaktif');
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+        })();
+    </script>
+</body>
+</html>
